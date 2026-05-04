@@ -14,6 +14,7 @@ const Record = () => {
   const [messages, setMessages] = useState<Msg[]>([
     { id: 1, role: "ai", text: "Hi! I'm AIVox. Press the mic or type to get started." },
   ]);
+  const [lastAudioUrl, setLastAudioUrl] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -23,7 +24,8 @@ const Record = () => {
       // Stop recording
       if (mediaRecorderRef.current) {
         mediaRecorderRef.current.stop();
-        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        // DO NOT stop tracks here, it corrupts the final WebM chunk.
+        // Tracks are now stopped inside the onstop callback.
       }
       setRecording(false);
     } else {
@@ -40,8 +42,19 @@ const Record = () => {
         };
 
         recorder.onstop = async () => {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp3' });
-          await uploadAudio(audioBlob);
+          const mimeType = recorder.mimeType || 'audio/webm';
+          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+          
+          if (audioBlob.size === 0) {
+            toast.error("ERROR: Your microphone recorded 0 bytes! Please check Windows Privacy Settings or unmute your mic.");
+            return;
+          }
+          
+          setLastAudioUrl(URL.createObjectURL(audioBlob));
+          await uploadAudio(audioBlob, mimeType);
+          
+          // Safely stop tracks after the file is finalized
+          stream.getTracks().forEach(track => track.stop());
         };
 
         recorder.start();
@@ -56,6 +69,7 @@ const Record = () => {
   };
 
   const playVoice = async (text: string) => {
+    const toastId = toast.loading("Generating voice...");
     try {
       const res = await fetch("http://localhost:5001/api/tts", {
         method: "POST",
@@ -71,18 +85,35 @@ const Record = () => {
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         audio.playbackRate = 1;
-        audio.play();
+        
+        audio.oncanplaythrough = () => {
+          toast.dismiss(toastId);
+          audio.play().catch(e => {
+            toast.error("Browser blocked audio autoplay. Please click anywhere on the screen first.");
+            console.error("Autoplay blocked:", e);
+          });
+        };
+        
+        audio.onerror = () => {
+          toast.dismiss(toastId);
+          toast.error("Failed to decode audio playback.");
+        };
       } else {
+        toast.dismiss(toastId);
+        toast.error("TTS generation failed on server");
         console.error("TTS failed with status", res.status);
       }
     } catch (error) {
+      toast.dismiss(toastId);
+      toast.error("Network error while trying to generate voice");
       console.error("Failed to play voice response", error);
     }
   };
 
-  const uploadAudio = async (blob: Blob) => {
+  const uploadAudio = async (blob: Blob, mimeType?: string) => {
     const formData = new FormData();
-    formData.append('audio', blob, 'recording.mp3');
+    const ext = mimeType?.includes('mp4') ? 'mp4' : mimeType?.includes('ogg') ? 'ogg' : 'webm';
+    formData.append('audio', blob, `recording.${ext}`);
 
     toast.info("Transcribing audio...");
     try {
@@ -97,9 +128,14 @@ const Record = () => {
 
       const data = await res.json();
       if (data.success) {
-        toast.success("Audio transcribed!");
         const transcriptText = data.data.transcript;
         
+        if (transcriptText === "[No speech detected]") {
+          toast.warning("No speech detected. Please try again.");
+          return;
+        }
+
+        toast.success("Audio transcribed!");
         setMessages(m => [...m, { id: Date.now(), role: "user", text: transcriptText }]);
 
         // 2. Think (LLM)
@@ -204,6 +240,12 @@ const Record = () => {
                 {[...Array(24)].map((_, i) => (
                   <span key={i} className="w-1 bg-gradient-primary rounded-full animate-wave" style={{ animationDelay: `${i * 0.05}s`, height: "100%" }} />
                 ))}
+              </div>
+            )}
+            {!recording && lastAudioUrl && (
+              <div className="mt-6 flex flex-col items-center">
+                <p className="text-sm text-muted-foreground mb-2">Check if your mic actually recorded sound:</p>
+                <audio src={lastAudioUrl} controls className="h-10 w-full max-w-[250px]" />
               </div>
             )}
           </motion.div>
