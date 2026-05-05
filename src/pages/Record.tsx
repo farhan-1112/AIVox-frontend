@@ -102,9 +102,10 @@ const Record = () => {
           toast.error("Failed to decode audio playback.");
         };
       } else {
+        const errorData = await res.json().catch(() => ({}));
         toast.dismiss(toastId);
-        toast.error("TTS generation failed on server");
-        console.error("TTS failed with status", res.status);
+        toast.error(errorData.error?.message || "TTS generation failed on server");
+        console.error("TTS failed with status", res.status, errorData);
       }
     } catch (error) {
       toast.dismiss(toastId);
