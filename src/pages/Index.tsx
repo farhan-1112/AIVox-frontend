@@ -5,6 +5,8 @@ import { Mic, FileText, Bot, Calendar, ArrowRight, Activity, CheckCircle } from 
 import { PageShell } from "@/components/PageShell";
 import { Footer } from "@/components/Footer";
 import { toast } from "sonner";
+import { API_URL } from "@/lib/api-config";
+
 
 type Meeting = { _id: string; title: string; date: string; time: string };
 type Transcript = { _id: string; text: string; createdAt: string };
@@ -29,14 +31,16 @@ const Index = () => {
       }
 
       // Fetch Meetings
-      const meetRes = await fetch("http://localhost:5001/api/meeting/list", {
+      const meetRes = await fetch(`${API_URL}/api/meeting/list`, {
+
         headers: { "Authorization": `Bearer ${token}` }
       });
       const meetData = await meetRes.json();
       if (meetData.success) setMeetings(meetData.data);
 
       // Fetch Transcripts
-      const transRes = await fetch("http://localhost:5001/api/record/list", {
+      const transRes = await fetch(`${API_URL}/api/record/list`, {
+
         headers: { "Authorization": `Bearer ${token}` }
       });
       const transData = await transRes.json();

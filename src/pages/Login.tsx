@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { LogIn, Mail, Lock } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { toast } from "sonner";
+import { API_URL } from "@/lib/api-config";
+
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -18,7 +20,8 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch("http://localhost:5001/api/auth/login", {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { UserPlus, Mail, Lock, User } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { toast } from "sonner";
+import { API_URL } from "@/lib/api-config";
+
 
 export default function Signup() {
   const [name, setName] = useState("");
@@ -19,7 +21,8 @@ export default function Signup() {
     }
 
     try {
-      const res = await fetch("http://localhost:5001/api/auth/signup", {
+      const res = await fetch(`${API_URL}/api/auth/signup`, {
+
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),

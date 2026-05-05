@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Clock, Plus, Mic, MessageSquare, Trash2 } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { toast } from "sonner";
+import { API_URL } from "@/lib/api-config";
+
 
 type Meeting = { _id: string; title: string; date: string; time: string };
 
@@ -15,7 +17,8 @@ const Meeting = () => {
 
   const fetchMeetings = async () => {
     try {
-      const res = await fetch("http://localhost:5001/api/meeting/list", {
+      const res = await fetch(`${API_URL}/api/meeting/list`, {
+
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("aivox_token")}`
         }
@@ -35,7 +38,8 @@ const Meeting = () => {
 
   const playVoice = async (text: string) => {
     try {
-      const res = await fetch("http://localhost:5001/api/tts", {
+      const res = await fetch(`${API_URL}/api/tts`, {
+
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -63,7 +67,8 @@ const Meeting = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:5001/api/meeting/create", {
+      const res = await fetch(`${API_URL}/api/meeting/create`, {
+
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -90,7 +95,8 @@ const Meeting = () => {
     
     toast.info("Parsing command...");
     try {
-      const res = await fetch("http://localhost:5001/api/chat", {
+      const res = await fetch(`${API_URL}/api/chat`, {
+
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -122,7 +128,8 @@ const Meeting = () => {
 
   const deleteMeeting = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:5001/api/meeting/${id}`, {
+      const res = await fetch(`${API_URL}/api/meeting/${id}`, {
+
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("aivox_token")}`

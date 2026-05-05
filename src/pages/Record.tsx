@@ -4,6 +4,8 @@ import { Mic, Send, MessageSquare, MicIcon } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { API_URL } from "@/lib/api-config";
+
 
 type Msg = { id: number; role: "user" | "ai"; text: string };
 
@@ -71,7 +73,8 @@ const Record = () => {
   const playVoice = async (text: string) => {
     const toastId = toast.loading("Generating voice...");
     try {
-      const res = await fetch("http://localhost:5001/api/tts", {
+      const res = await fetch(`${API_URL}/api/tts`, {
+
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -118,7 +121,8 @@ const Record = () => {
     toast.info("Transcribing audio...");
     try {
       // 1. Listen (STT)
-      const res = await fetch("http://localhost:5001/api/record/upload", {
+      const res = await fetch(`${API_URL}/api/record/upload`, {
+
         method: "POST",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("aivox_token")}`
@@ -140,7 +144,8 @@ const Record = () => {
 
         // 2. Think (LLM)
         toast.info("AI is thinking...");
-        const chatRes = await fetch("http://localhost:5001/api/chat", {
+        const chatRes = await fetch(`${API_URL}/api/chat`, {
+
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -172,7 +177,8 @@ const Record = () => {
     setInput("");
 
     try {
-      const res = await fetch("http://localhost:5001/api/chat", {
+      const res = await fetch(`${API_URL}/api/chat`, {
+
         method: "POST",
         headers: {
           "Content-Type": "application/json",
